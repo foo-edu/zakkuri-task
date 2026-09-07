@@ -1,0 +1,2977 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ざっくりTASK</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<!-- App Check を使うとき（手順1/2）: 次の行のコメントを外す
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js"></script>
+-->
+<style>
+/* ── CSS Variables ───────────────────────────────────────────── */
+:root {
+  --bg:            #F0F2F5;
+  --bg2:           #E8EAED;
+  --surface:       #FFFFFF;
+  --surface2:      #F5F7FA;
+  --border:        #D0D5DD;
+  --border-focus:  #3B82F6;
+  --text:          #1A2B5E;
+  --text-muted:    #4D6080;
+  --text-light:    #8A9CBD;
+  --primary:       #3B82F6;
+  --primary-hover: #2563EB;
+  --primary-light: #DBEAFE;
+  --large-color:   #EF4444;
+  --large-bg:      #FCA5A5;
+  --large-text:    #991B1B;
+  --medium-color:  #FDD835;
+  --medium-bg:     #FDE68A;
+  --medium-text:   #795500;
+  --small-color:   #22C55E;
+  --small-bg:      #86EFAC;
+  --small-text:    #166534;
+  --danger:        #EF4444;
+  --danger-bg:     #FEE2E2;
+  --radius:        10px;
+  --radius-sm:     6px;
+  --shadow:        0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+  --shadow-sm:     0 1px 3px rgba(0,0,0,0.07);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', 'Hiragino Sans', sans-serif;
+  font-size: 16px;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow-sm);
+}
+
+header h1 {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  line-height: 1;
+}
+
+.title-ja {
+  font-family: 'Space Grotesk', 'Hiragino Sans', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.title-en {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.header-actions { display: flex; gap: 6px; }
+
+/* ── Buttons ─────────────────────────────────────────────────── */
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px 20px;
+  min-height: 44px;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.06em;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+
+.btn-icon {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  min-width: 40px;
+  min-height: 40px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-icon:hover { background: var(--bg2); color: var(--text); border-color: var(--border-focus); }
+
+.btn-primary {
+  background: var(--primary);
+  color: #F7F4EF;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-secondary {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 16px;
+  min-height: 38px;
+  font-size: 0.9rem;
+}
+.btn-secondary:hover { background: var(--bg2); color: var(--text); }
+
+.btn-danger {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--danger);
+  padding: 9px 18px;
+  font-size: 0.9rem;
+}
+.btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
+
+/* ── Layout ──────────────────────────────────────────────────── */
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 20px 16px;
+}
+
+/* Desktop two-column layout */
+.desktop-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .desktop-layout { grid-template-columns: 62fr 38fr; }
+}
+
+.desktop-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.desktop-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 767px) {
+  .desktop-layout {
+    grid-template-columns: 1fr;
+  }
+  .desktop-right {
+    order: 2;
+  }
+}
+
+.top-area {
+  margin-bottom: 16px;
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.card-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  margin-bottom: 18px;
+}
+
+/* ── Form (modal) ────────────────────────────────────────────── */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 500px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1 / -1; }
+
+label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+input, select, textarea {
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: 'Inter', 'Hiragino Sans', sans-serif;
+  background: var(--bg2);
+  color: var(--text);
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+
+textarea { resize: vertical; min-height: 56px; }
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+/* ── Calendar header ─────────────────────────────────────────── */
+.calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.cal-nav-group { display: flex; align-items: center; gap: 4px; }
+
+.period-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  min-width: 130px;
+  text-align: center;
+}
+
+.today-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  min-height: 44px;
+}
+.today-btn:hover { background: var(--bg2); border-color: var(--border-focus); color: var(--text); }
+
+/* ── FAB "+" button ──────────────────────────────────────────── */
+.fab-add {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.3rem;
+  font-weight: 300;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #F7F4EF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.30);
+  transition: background 0.18s, transform 0.15s;
+  padding: 0;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.fab-add:hover { background: var(--primary-hover); transform: scale(1.08); }
+
+/* ── Date display button (in modal) ──────────────────────────── */
+.date-display-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: 'Inter', 'Hiragino Sans', sans-serif;
+  background: var(--bg2);
+  color: var(--text);
+  min-height: 44px;
+  text-align: left;
+  justify-content: flex-start;
+  width: 100%;
+  transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+  cursor: pointer;
+}
+.date-display-btn:hover {
+  border-color: var(--border-focus);
+  background: var(--surface);
+}
+.date-display-btn .dp-icon { font-size: 1rem; flex-shrink: 0; }
+.date-display-btn.has-value { color: var(--text); }
+.date-display-btn:not(.has-value) { color: var(--text-light); }
+
+/* ── Date picker overlay ─────────────────────────────────────── */
+#datePickerOverlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.40);
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+#datePickerOverlay.active { display: flex; }
+
+.dp-modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px 18px 18px;
+  width: min(390px, 96vw);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+  border: 1px solid var(--border);
+}
+
+.dp-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.dp-nav-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text);
+}
+
+.dp-nav-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 5px 12px;
+  min-height: 34px;
+  font-size: 1rem;
+  border-radius: var(--radius-sm);
+}
+.dp-nav-btn:hover { background: var(--bg2); }
+
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.dp-day-header {
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 0.06em;
+  padding: 3px 0 6px;
+}
+
+.dp-day {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.14s, border-color 0.14s;
+  height: 40px;
+  width: 100%;
+  padding: 0;
+}
+.dp-day:hover { background: var(--bg2); border-color: var(--border); }
+.dp-day.today { border-color: var(--primary); color: var(--primary); font-weight: 700; }
+.dp-day.selected { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 700; }
+.dp-day.other-month { color: var(--text-light); }
+.dp-day.empty { cursor: default; pointer-events: none; }
+
+.dp-footer {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  align-items: center;
+}
+
+.dp-today-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 8px 14px;
+  min-height: 36px;
+  background: var(--primary-light);
+  border: 1px solid var(--border-focus);
+  color: var(--primary-hover);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dp-today-btn:hover { background: var(--primary-light); }
+
+.dp-manual-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 8px 14px;
+  min-height: 36px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.dp-manual-btn:hover { background: var(--bg2); }
+
+#dpManualInputWrapper {
+  display: none;
+  margin-top: 10px;
+}
+#dpManualInputWrapper.active { display: block; }
+#dpManualNative {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  background: var(--bg2);
+  color: var(--text);
+  margin-bottom: 8px;
+}
+#dpManualNative:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+#dpManualConfirm {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  min-height: 36px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 600;
+}
+#dpManualConfirm:hover { background: var(--primary-hover); }
+
+/* ── Calendar grid ───────────────────────────────────────────── */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.cal-header {
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-light);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 0 7px;
+}
+
+/* Month view day cells */
+.month-cell {
+  min-height: 110px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px;
+  background: var(--surface2);
+  transition: border-color 0.15s, background 0.14s, transform 0.12s ease, box-shadow 0.12s ease;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.month-cell:hover {
+  background: var(--primary-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59,130,246,0.12);
+  z-index: 1;
+}
+
+.month-cell.today {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.month-cell.other-month {
+  opacity: 0.45;
+}
+
+@media (max-width: 767px) {
+  .month-cell { min-height: 64px; }
+}
+
+.cal-date {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-light);
+  margin-bottom: 4px;
+  display: block;
+  line-height: 1.3;
+}
+
+.month-cell.today .cal-date {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Month view: work period bar (Google Calendar style) */
+.cal-work-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 17px;
+  cursor: pointer;
+  transition: opacity 0.1s;
+  z-index: 2;
+}
+.cal-work-bar:hover { opacity: 0.8; }
+.cal-work-bar.bar-start  { left: 4px;  border-radius: 3px 0 0 3px; }
+.cal-work-bar.bar-end    { right: 4px; border-radius: 0 3px 3px 0; }
+.cal-work-bar.bar-single { left: 4px; right: 4px; border-radius: 3px; }
+.cal-work-bar:not(.bar-start):not(.bar-end):not(.bar-single) { border-radius: 0; }
+/* Work period days: light fill */
+.cal-work-bar.large  { background: var(--large-bg); }
+.cal-work-bar.medium { background: var(--medium-bg); }
+.cal-work-bar.small  { background: var(--small-bg); }
+/* Deadline day (bar-end / bar-single): solid fill + title text */
+.cal-work-bar.bar-end.large,  .cal-work-bar.bar-single.large  { background: var(--large-color); }
+.cal-work-bar.bar-end.medium, .cal-work-bar.bar-single.medium { background: var(--medium-color); }
+.cal-work-bar.bar-end.small,  .cal-work-bar.bar-single.small  { background: var(--small-color); }
+.cal-work-bar.bar-end, .cal-work-bar.bar-single {
+  font-family: 'Inter', sans-serif; font-size: 0.58rem; font-weight: 700;
+  color: #fff; display: flex; align-items: center;
+  padding: 0 5px; white-space: nowrap; overflow: hidden;
+}
+/* Done (checked): fade the specific day's segment */
+.cal-work-bar.done { opacity: 0.28; }
+.cal-deadline-tag.done { opacity: 0.40; }
+
+/* Month view: deadline tag */
+.cal-deadline-tag {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-bottom: 2px;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.cal-deadline-tag.large  { background: var(--large-color);  color: #fff; }
+.cal-deadline-tag.medium { background: var(--medium-color); color: #fff; }
+.cal-deadline-tag.small  { background: var(--small-color);  color: #fff; }
+
+/* ── Task list ───────────────────────────────────────────────── */
+.task-list { display: flex; flex-direction: column; gap: 8px; }
+
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  transition: border-color 0.18s, background 0.18s;
+}
+
+.task-item:hover { border-color: var(--border-focus); background: var(--surface); }
+
+/* Task done: faded, moved to bottom of list */
+.task-item.task-done { opacity: 0.38; }
+.task-item.task-done .task-title { text-decoration: line-through; color: var(--text-muted); }
+
+/* Star burst animation on checkbox check */
+.star-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  font-size: 13px;
+  line-height: 1;
+  transform-origin: center center;
+  animation: starBurst 0.65s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+@keyframes starBurst {
+  0%   { transform: translate(-50%,-50%) scale(0.4); opacity: 1; }
+  65%  { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.15); opacity: 0; }
+}
+
+/* Checkbox: hidden by default, reveals on hover (desktop) / always visible (mobile) */
+.task-check-wrap {
+  width: 0;
+  overflow: hidden;
+  transition: width 0.18s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  align-self: center;
+}
+.task-item:hover .task-check-wrap { width: 32px; }
+@media (hover: none) {
+  .task-check-wrap { width: 32px !important; overflow: visible !important; }
+}
+
+/* Checkbox: perfect circle */
+.task-check {
+  width: 22px !important;
+  height: 22px !important;
+  min-width: 22px !important;
+  min-height: 22px !important;
+  border-radius: 50% !important;
+  border: 2px solid var(--border) !important;
+  background: transparent !important;
+  cursor: pointer;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s;
+  padding: 0 !important;
+  flex-shrink: 0;
+  align-self: center;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.task-check:hover { border-color: var(--primary); }
+.task-check.checked { background: var(--primary) !important; border-color: var(--primary) !important; }
+.task-check.checked::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+  display: block;
+}
+
+
+.task-weight-badge {
+  width: 3px;
+  flex-shrink: 0;
+  align-self: stretch;
+  border-radius: 2px;
+}
+.task-weight-badge.large  { background: var(--large-color); }
+.task-weight-badge.medium { background: var(--medium-color); }
+.task-weight-badge.small  { background: var(--small-color); }
+
+.task-info { flex: 1; min-width: 0; }
+
+/* ── Task edit button (⋮) ────────────────────────────────────── */
+.task-edit-btn {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 50% !important;
+  color: var(--text-light);
+  font-size: 1.15rem;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: center;
+  opacity: 0;
+  transition: opacity 0.18s, background 0.18s, color 0.18s, transform 0.15s;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  -webkit-user-drag: none;
+  user-select: none;
+  outline: none;
+}
+.task-edit-btn:focus { outline: none; box-shadow: none; }
+.task-edit-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 50% !important;
+}
+.task-item:hover .task-edit-btn { opacity: 1; color: var(--text-muted); }
+.task-edit-btn:hover {
+  background: var(--primary-light) !important;
+  color: var(--primary) !important;
+  transform: scale(1.08);
+}
+.task-edit-btn:active { transform: scale(0.95); }
+@media (hover: none) {
+  .task-edit-btn { opacity: 0.55 !important; }
+}
+
+/* ── Tutorial overlay ────────────────────────────────────────── */
+.tut-bar {
+  position: fixed;
+  background: rgba(0,0,0,0.60);
+  z-index: 8999;
+  pointer-events: all;
+  display: none;
+}
+#tutBlocker {
+  position: fixed;
+  inset: 0;
+  z-index: 8999;
+  background: rgba(0,0,0,0.38);
+  pointer-events: all;
+  display: none;
+}
+#tutMsgBox {
+  position: fixed;
+  top: 72px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px 24px 16px;
+  z-index: 9001;
+  width: min(380px, 92vw);
+  box-shadow: 0 8px 36px rgba(0,0,0,0.26);
+  text-align: center;
+  display: none;
+  pointer-events: all;
+}
+#tutStep {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 8px;
+}
+#tutMsg {
+  font-size: 0.97rem;
+  line-height: 1.70;
+  color: var(--text);
+  margin-bottom: 12px;
+  white-space: pre-line;
+}
+#tutActionHint {
+  display: none;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  background: var(--primary-light);
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+#tutNextBtn {
+  background: var(--primary);
+  color: #fff;
+  border: none !important;
+  border-radius: 8px;
+  padding: 10px 32px !important;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: auto !important;
+  display: none;
+}
+#tutNextBtn:hover { background: var(--primary-hover) !important; }
+
+.task-title {
+  font-family: 'Inter', 'Hiragino Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.01em;
+}
+
+.task-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 5px;
+  letter-spacing: 0.06em;
+}
+
+.task-memo {
+  font-family: 'Inter', 'Hiragino Sans', sans-serif;
+  font-size: 0.88rem;
+  color: var(--text-light);
+  margin-top: 5px;
+  font-style: italic;
+  white-space: pre-wrap;
+}
+
+/* Task list date navigation */
+.task-nav-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 0 6px;
+  font-size: 1.1rem;
+  min-height: auto;
+  height: 28px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: color 0.15s, background 0.15s;
+}
+.task-nav-btn:hover { color: var(--text); background: var(--bg2); }
+.task-nav-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  min-width: 52px;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.task-detail-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 6px 12px;
+  min-height: 32px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-start;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.task-detail-btn:hover { background: var(--bg2); border-color: var(--border-focus); color: var(--text); }
+
+/* ── Chips ───────────────────────────────────────────────────── */
+.chip {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.chip.large  { background: var(--large-bg);  color: var(--large-text); }
+.chip.medium { background: var(--medium-bg); color: var(--medium-text); }
+.chip.small  { background: var(--small-bg);  color: var(--small-text); }
+
+/* ── Modals / overlays ───────────────────────────────────────── */
+.overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.40);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+.overlay.active { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 24px;
+  width: min(420px, 100%);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+  border: 1px solid var(--border);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.task-input-modal { width: min(480px, 96vw); }
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  color: var(--text-light);
+  cursor: pointer;
+  padding: 2px 6px;
+  min-height: auto;
+  line-height: 1;
+  font-family: sans-serif;
+}
+.modal-close:hover { color: var(--text); }
+
+/* ── Notification banners ────────────────────────────────────── */
+.notif-banner {
+  font-family: 'Inter', 'Hiragino Sans', sans-serif;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  border-left: 3px solid;
+  line-height: 1.7;
+}
+.notif-start  { background: var(--primary-light); border-color: var(--primary);      color: var(--primary-hover); }
+.notif-warn   { background: var(--medium-bg);     border-color: var(--medium-color); color: var(--medium-text); }
+.notif-urgent { background: var(--danger-bg);     border-color: var(--danger);       color: var(--danger); }
+
+/* ── Notification permission btn ─────────────────────────────── */
+.notif-request-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 8px 14px;
+  min-height: 36px;
+  background: var(--primary-light);
+  border: 1px solid var(--border-focus);
+  color: var(--primary-hover);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.notif-request-btn:hover { background: var(--primary-light); }
+
+/* ── Misc ────────────────────────────────────────────────────── */
+.empty {
+  font-family: 'Inter', sans-serif;
+  text-align: center;
+  color: var(--text-light);
+  padding: 32px;
+  font-size: 0.9rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.detail-table { width: 100%; border-collapse: collapse; font-size: 0.96rem; }
+.detail-table td { padding: 8px 0; vertical-align: top; border-bottom: 1px solid var(--border); }
+.detail-table tr:last-child td { border-bottom: none; }
+.detail-table td:first-child {
+  font-family: 'Inter', sans-serif;
+  color: var(--text-light);
+  width: 96px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding-right: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ── URL info card ───────────────────────────────────────────── */
+.url-info-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.url-info-icon { font-size: 1.4rem; flex-shrink: 0; }
+.url-info-text { flex: 1; min-width: 0; }
+.url-info-text strong {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+.url-info-text span { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+.url-copy-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 9px 16px;
+  min-height: 38px;
+  background: var(--primary);
+  color: #F7F4EF;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s;
+  flex-shrink: 0;
+}
+.url-copy-btn:hover { background: var(--primary-hover); }
+.url-copy-btn.copied { background: var(--small-color); }
+
+/* Toast notifications */
+#toastContainer {
+  position: fixed;
+  top: 72px;
+  right: 16px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 300px;
+  pointer-events: none;
+}
+.notif-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  line-height: 1.5;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  pointer-events: all;
+  animation: toastIn 0.25s ease;
+  border-left: 4px solid;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.notif-toast.start  { background: var(--primary-light); border-color: var(--primary); color: var(--primary-hover); }
+.notif-toast.warn   { background: var(--medium-bg); border-color: var(--medium-color); color: var(--medium-text); }
+.notif-toast.urgent { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+.toast-msg { flex: 1; }
+.toast-close {
+  background: transparent; border: none; color: currentColor;
+  opacity: 0.6; cursor: pointer; font-size: 1rem; padding: 0; line-height: 1; flex-shrink: 0;
+}
+.toast-close:hover { opacity: 1; }
+@media (max-width: 600px) {
+  #toastContainer { right: 8px; left: 8px; max-width: none; top: 68px; }
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .card { padding: 14px; }
+  .url-info-card { flex-wrap: wrap; }
+  .url-copy-btn { width: 100%; text-align: center; }
+}
+</style>
+</head>
+<body>
+<div id="toastContainer"></div>
+
+<header>
+  <h1 id="appTitle">
+    <span class="title-ja">ざっくり</span><span class="title-en">TASK</span>
+  </h1>
+  <div class="header-actions">
+    <span id="syncStatus" style="font-size:1.2rem;display:none;cursor:default;padding:0 4px" title=""></span>
+    <div style="position:relative;display:inline-block" id="shareWrapper">
+      <button class="btn-icon" id="copyUrlBtn" title="共有"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg></button>
+      <div id="shareDropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.14);z-index:9100;min-width:200px;overflow:hidden">
+        <button id="sharePrivateBtn" style="display:block;width:100%;text-align:left;padding:11px 16px;background:none;border:none;border-radius:0;font-size:0.88rem;color:var(--text);cursor:pointer" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">自分専用URLをコピー</button>
+        <div style="height:1px;background:var(--border);margin:0 8px"></div>
+        <button id="shareFriendBtn" style="display:block;width:100%;text-align:left;padding:11px 16px;background:none;border:none;border-radius:0;font-size:0.88rem;color:var(--text);cursor:pointer" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">友だちに共有</button>
+      </div>
+    </div>
+    <button class="btn-icon" id="settingsBtn"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
+  </div>
+</header>
+
+<main>
+  <div class="desktop-layout">
+    <!-- Left column: calendar -->
+    <div class="desktop-left">
+      <div class="card">
+        <!-- Calendar header -->
+        <div class="calendar-header">
+          <button class="today-btn" id="todayBtn">今日</button>
+          <div class="cal-nav-group">
+            <button class="btn-secondary" id="prevPeriod" style="padding:6px 14px;min-height:36px;font-size:1.1rem;">‹</button>
+            <span class="period-label" id="calPeriodLabel"></span>
+            <button class="btn-secondary" id="nextPeriod" style="padding:6px 14px;min-height:36px;font-size:1.1rem;">›</button>
+          </div>
+          <button class="fab-add" id="fabAddBtn" title="タスクを追加">＋</button>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div><!-- end desktop-left -->
+
+    <!-- Right column: task list -->
+    <div class="desktop-right">
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div class="card-title" style="margin-bottom:0" id="listTitle">TASK LIST</div>
+          <div style="display:flex;align-items:center;gap:0">
+            <button class="task-nav-btn" id="prevDateBtn">‹</button>
+            <span class="task-nav-label" id="taskListDateLabel" style="cursor:pointer" title="Return to today" onclick="viewDate=todayDate();renderTaskList();soundTap()"></span>
+            <button class="task-nav-btn" id="nextDateBtn">›</button>
+          </div>
+        </div>
+        <div class="task-list" id="taskList"></div>
+      </div>
+    </div><!-- end desktop-right -->
+
+  </div><!-- end desktop-layout -->
+</main>
+
+<!-- Task input modal -->
+<div class="overlay" id="taskInputOverlay">
+  <div class="modal task-input-modal">
+    <div class="modal-header">
+      <span class="modal-title" id="tiModalTitle">タスクを追加</span>
+      <button class="modal-close" id="closeTIModal">✕</button>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label id="tiLblTitle">タイトル <span style="color:var(--danger)">*</span></label>
+        <input type="text" id="tiInputTitle" autocomplete="off" maxlength="200">
+      </div>
+      <div class="form-group">
+        <label id="tiLblDeadline">締め切り日 <span style="color:var(--danger)">*</span></label>
+        <button type="button" id="tiDeadlineBtn" class="date-display-btn">
+          <span class="dp-icon">📅</span>
+          <span id="tiDeadlineBtnText"></span>
+        </button>
+        <input type="date" id="tiInputDeadline" style="display:none">
+      </div>
+      <div class="form-group">
+        <label id="tiLblWeight">重さ</label>
+        <select id="tiInputWeight">
+          <option value="large" id="tiOptLarge">大（7日）</option>
+          <option value="medium" id="tiOptMedium" selected>中（3日）</option>
+          <option value="small" id="tiOptSmall">小（1日）</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label id="tiLblMemo">メモ（任意）</label>
+        <textarea id="tiInputMemo" rows="2" maxlength="1000"></textarea>
+      </div>
+    </div>
+    <div id="tiFormError" style="display:none;color:var(--danger);font-size:0.82rem;margin:-4px 0 8px;padding:6px 10px;background:var(--danger-bg);border-radius:var(--radius-sm)"></div>
+    <div class="form-actions">
+      <button class="btn-primary" id="tiAddBtn">＋ 追加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Date picker overlay -->
+<div class="overlay" id="datePickerOverlay">
+  <div class="dp-modal">
+    <div class="dp-nav">
+      <button class="dp-nav-btn" id="dpPrev">‹</button>
+      <span class="dp-nav-title" id="dpMonthLabel"></span>
+      <button class="dp-nav-btn" id="dpNext">›</button>
+    </div>
+    <div class="dp-grid" id="dpGrid"></div>
+    <div class="dp-footer">
+      <button class="dp-today-btn" id="dpTodayBtn">今日</button>
+      <button class="dp-manual-btn" id="dpManualBtn">⌨ 手動入力</button>
+    </div>
+    <div id="dpManualInputWrapper">
+      <input type="date" id="dpManualNative">
+      <button id="dpManualConfirm">確定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="settingsTitle">設定</span>
+      <button class="modal-close" id="closeSettings">✕</button>
+    </div>
+    <div style="margin-bottom:16px">
+      <label id="lblLang" style="font-size:0.8rem;font-weight:600;color:var(--text-muted);letter-spacing:0.1em;text-transform:uppercase">Language</label>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <button class="btn-secondary" id="langEnBtn" style="flex:1">English</button>
+        <button class="btn-secondary" id="langJaBtn" style="flex:1">日本語</button>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label id="lblDayLarge">大タスクの作業日数</label>
+      <input type="number" id="settingLarge" min="1" max="365">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label id="lblDayMedium">中タスクの作業日数</label>
+      <input type="number" id="settingMedium" min="1" max="365">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label id="lblDaySmall">小タスクの作業日数</label>
+      <input type="number" id="settingSmall" min="0" max="365">
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="font-size:0.8rem;font-weight:600;color:var(--text-muted);font-family:'Inter',sans-serif;letter-spacing:0.14em;text-transform:uppercase" id="lblNotifPerm">ブラウザ通知</label>
+      <div style="margin-top:6px;display:flex;align-items:center;gap:10px">
+        <button class="notif-request-btn" id="notifPermBtn">通知を許可する</button>
+        <span id="notifStatus" style="font-size:0.78rem;color:var(--text-muted)"></span>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-primary" id="saveSettings">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Task detail modal -->
+<div class="overlay" id="taskDetailOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="detailTitle"></span>
+      <button class="modal-close" id="closeDetail">✕</button>
+    </div>
+    <div id="detailBody"></div>
+    <div class="form-actions" style="margin-top:16px;gap:8px;">
+      <button class="btn-secondary" id="editTaskBtn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> 編集</button>
+      <button class="btn-danger" id="deleteTaskBtn"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg> 削除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Tutorial overlay -->
+<div id="tutBlocker"></div>
+<div id="tutBar1" class="tut-bar"></div>
+<div id="tutBar2" class="tut-bar"></div>
+<div id="tutBar3" class="tut-bar"></div>
+<div id="tutBar4" class="tut-bar"></div>
+<div id="tutMsgBox">
+  <div id="tutStep"></div>
+  <p id="tutMsg"></p>
+  <div id="tutActionHint"></div>
+  <button id="tutNextBtn" onclick="tutNext()">次へ</button>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let lang = localStorage.getItem('lang') || 'ja';
+let settings = (function () {
+  const def = { large: 7, medium: 3, small: 1 };
+  try {
+    const raw = JSON.parse(localStorage.getItem('taskSettings') || 'null');
+    if (!raw || typeof raw !== 'object') return def;
+    const num = (v, d, min) => (typeof v === 'number' && isFinite(v) && v >= min && v <= 365) ? Math.floor(v) : d;
+    return { large: num(raw.large, 7, 1), medium: num(raw.medium, 3, 1), small: num(raw.small, 1, 0) };
+  } catch (e) { return def; }
+})();
+let tasks = [];
+let currentMonthDate = new Date();
+let selectedTaskId = null;
+let _editingTaskId = null;
+let viewDate = todayDate();
+
+// Date picker state
+let dpMonth = new Date();
+let _dpCallback = null; // callback-based date picker
+
+// ── Firebase config ────────────────────────────────────────────
+// TODO: Replace with your Firebase project config
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBS9WJuXrRXq-rfl_szeR2Ko356BoK0c2M",
+  authDomain: "rough-task-7e75b.firebaseapp.com",
+  databaseURL: "https://rough-task-7e75b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "rough-task-7e75b",
+  storageBucket: "rough-task-7e75b.firebasestorage.app",
+  messagingSenderId: "510486813191",
+  appId: "1:510486813191:web:b9a0271834ba12d90828a2"
+};
+
+// ── App Check（既定：無効）──────────────────────────────────────
+// 機械的な大量書き込みへの備え。ふだんは空のままでよい。
+// 有効化する手順は2つだけ:
+//   1) <head> の firebase-app-check-compat.js のコメントを外す
+//   2) 下の '' に reCAPTCHA v3 のサイトキーを貼る
+// 空の間はまったく動作せず、アプリの挙動も変わらない。
+// 必ず Firebase コンソールで「監視のみ」で数日試してから強制に切り替えること。
+const APPCHECK_SITE_KEY = '';
+
+let _fbDb = null;
+let _fbEnabled = false;
+
+function initFirebase() {
+  if (!FIREBASE_CONFIG.databaseURL) return;
+  try {
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    // App Check はデータベースに触る前に有効化する必要がある
+    if (APPCHECK_SITE_KEY && firebase.appCheck) {
+      try { firebase.appCheck().activate(APPCHECK_SITE_KEY, true); }
+      catch (e) { console.warn('App Check activate failed:', e); }
+    }
+    _fbDb = firebase.database();
+    _fbEnabled = true;
+    setSyncStatus('ok');
+  } catch(e) {
+    console.warn('Firebase init failed:', e);
+  }
+}
+
+function fbPath() {
+  const pid = localStorage.getItem('personalId');
+  return pid ? `rooms/${pid}/tasks` : null;
+}
+
+function setSyncStatus(state) {
+  /* sync hidden */
+}
+
+function saveToFirebase() {
+  if (!_fbEnabled) return;
+  const path = fbPath();
+  if (!path) return;
+  setSyncStatus('syncing');
+  _fbDb.ref(path).set(tasks)
+    .then(() => setSyncStatus('ok'))
+    .catch(() => setSyncStatus('err'));
+}
+
+function startRealtimeListener() {
+  if (!_fbEnabled) return;
+  const path = fbPath();
+  if (!path) return;
+  _fbDb.ref(path).on('value', snap => {
+    const data = snap.val();
+    if (data === null || Array.isArray(data)) {
+      tasks = sanitizeTasks(data);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      renderAll();
+    }
+    setSyncStatus('ok');
+  }, () => setSyncStatus('err'));
+}
+
+async function loadFromFirebase() {
+  if (!_fbEnabled) return false;
+  const path = fbPath();
+  if (!path) return false;
+  try {
+    setSyncStatus('syncing');
+    const snap = await _fbDb.ref(path).once('value');
+    const data = snap.val();
+    if (data === null || Array.isArray(data)) {
+      tasks = sanitizeTasks(data);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      setSyncStatus('ok');
+      return true;
+    }
+    setSyncStatus('ok');
+    return false;
+  } catch(e) {
+    setSyncStatus('err');
+    return false;
+  }
+}
+
+// ── URL encode / decode ────────────────────────────────────────
+function encodeTasks(arr) {
+  try { return btoa(encodeURIComponent(JSON.stringify(arr))); } catch(e) { return ''; }
+}
+
+function decodeTasks(str) {
+  try { const arr = JSON.parse(decodeURIComponent(atob(str))); return Array.isArray(arr) ? arr : null; } catch(e) { return null; }
+}
+
+// ── 入力データの検証 ────────────────────────────────────────────
+// タスクは「URLのハッシュ」「Firebase」「localStorage」の3経路から入ってくる。
+// いずれも第三者が中身を差し替えられるため、画面に出す前にここで必ず通す。
+const MAX_TASKS      = 500;
+const MAX_TITLE_LEN  = 200;
+const MAX_MEMO_LEN   = 1000;
+const MAX_DONE_DAYS  = 400;
+const WEIGHTS        = ['large', 'medium', 'small'];
+const DATE_RE        = /^\d{4}-\d{2}-\d{2}$/;
+const TASK_ID_RE     = /^[A-Za-z0-9_-]{1,40}$/;
+
+function newTaskId() {
+  return Date.now().toString(36) + genPersonalId().slice(2, 12);
+}
+
+function sanitizeTasks(raw) {
+  if (!Array.isArray(raw)) return [];
+  const out = [];
+  for (const item of raw.slice(0, MAX_TASKS)) {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
+    // 締切が無効なものは表示できないので捨てる
+    if (typeof item.deadline !== 'string' || !DATE_RE.test(item.deadline)) continue;
+    const title = typeof item.title === 'string' ? item.title.slice(0, MAX_TITLE_LEN) : '';
+    if (!title) continue;
+    const days = Array.isArray(item.completedDays)
+      ? item.completedDays.filter(d => typeof d === 'string' && DATE_RE.test(d)).slice(0, MAX_DONE_DAYS)
+      : [];
+    out.push({
+      // 既知のキーだけを組み立て直す（未知のキーは持ち越さない）
+      id:            (typeof item.id === 'string' && TASK_ID_RE.test(item.id)) ? item.id : newTaskId(),
+      title:         title,
+      deadline:      item.deadline,
+      weight:        WEIGHTS.includes(item.weight) ? item.weight : 'medium',
+      memo:          typeof item.memo === 'string' ? item.memo.slice(0, MAX_MEMO_LEN) : '',
+      completedDays: days,
+      created:       (typeof item.created === 'string' && item.created.length <= 40) ? item.created : new Date().toISOString()
+    });
+  }
+  return out;
+}
+
+// URLハッシュの個人IDをそのままFirebaseのパスに使うと、任意のパスを指定できてしまう。
+// 生成器が実際に作る形だけを通す（旧版の短いIDも読めるよう下限は緩めにしてある）。
+const PERSONAL_ID_RE = /^p_[A-Za-z0-9]{6,64}$/;
+function isValidPersonalId(pid) {
+  return typeof pid === 'string' && PERSONAL_ID_RE.test(pid);
+}
+
+function loadLocalTasks() {
+  try { return sanitizeTasks(JSON.parse(localStorage.getItem('tasks') || '[]')); }
+  catch (e) { return []; }
+}
+
+function genPersonalId() {
+  // 文字種は従来どおり英数字36種（0-9 + 小文字a-z のみ。大文字は使わない）
+  // 桁数のみ 14 → 16 に変更
+  const PID_CHARS = '0123456789abcdefghijklmnopqrstuvwxyz';
+  const PID_LEN = 16;
+  let out = '';
+  if (window.crypto && crypto.getRandomValues) {
+    const buf = new Uint8Array(PID_LEN * 2);
+    while (out.length < PID_LEN) {
+      crypto.getRandomValues(buf);
+      // 256は36で割り切れないため、偏りの出る252以上は捨てる（252 = 36 * 7）
+      for (let i = 0; i < buf.length && out.length < PID_LEN; i++) {
+        if (buf[i] < 252) out += PID_CHARS[buf[i] % 36];
+      }
+    }
+  } else {
+    for (let i = 0; i < PID_LEN; i++) out += PID_CHARS[Math.floor(Math.random() * 36)];
+  }
+  return 'p_' + out;
+}
+
+function updateURLHash() {
+  const pid = localStorage.getItem('personalId');
+  if (_fbEnabled) {
+    // Firebase mode: URL always shows personal ID only
+    if (pid) history.replaceState(null, '', '#' + pid);
+    return;
+  }
+  if (tasks.length === 0) {
+    if (pid) history.replaceState(null, '', '#' + pid);
+    return;
+  }
+  const encoded = encodeTasks(tasks);
+  if (encoded) history.replaceState(null, '', '#' + encoded);
+}
+
+async function loadInitialTasks() {
+  const hash = location.hash.slice(1);
+
+  // 個人IDを確保（Firebase・非Firebase共通）
+  if (hash && hash.startsWith('p_')) {
+    // 形式が不正なIDは採用しない（不正なFirebaseパスを指定されるのを防ぐ）
+    if (isValidPersonalId(hash)) {
+      localStorage.setItem('personalId', hash);
+    } else {
+      const pid = localStorage.getItem('personalId') || genPersonalId();
+      localStorage.setItem('personalId', pid);
+      history.replaceState(null, '', '#' + pid);
+    }
+  } else if (!hash) {
+    const pid = localStorage.getItem('personalId') || genPersonalId();
+    localStorage.setItem('personalId', pid);
+    history.replaceState(null, '', '#' + pid);
+  }
+
+  // Firebase初期化を試みる
+  initFirebase();
+
+  if (_fbEnabled) {
+    const loaded = await loadFromFirebase();
+    if (!loaded) {
+      // Firebaseにデータなし → URLやlocalStorageから移行
+      if (hash && !hash.startsWith('p_')) {
+        const decoded = decodeTasks(hash);
+        if (decoded !== null) {
+          tasks = sanitizeTasks(decoded);
+          localStorage.setItem('tasks', JSON.stringify(tasks));
+          saveToFirebase();
+          history.replaceState(null, '', '#' + localStorage.getItem('personalId'));
+        }
+      } else {
+        tasks = loadLocalTasks();
+        if (tasks.length > 0) saveToFirebase();
+      }
+    }
+    startRealtimeListener();
+    return;
+  }
+
+  // 非Firebaseモード：URLエンコード方式
+  if (hash && !hash.startsWith('p_')) {
+    const decoded = decodeTasks(hash);
+    if (decoded !== null) {
+      tasks = sanitizeTasks(decoded);
+      localStorage.setItem('tasks', JSON.stringify(tasks));
+      return;
+    }
+  }
+
+  tasks = loadLocalTasks();
+  if (tasks.length > 0) updateURLHash();
+}
+
+// ── i18n ───────────────────────────────────────────────────────
+const T = {
+  ja: {
+    formTitle: 'タスクを追加',
+    lblTitle: 'タイトル',
+    lblDeadline: '締め切り日',
+    lblWeight: '重さ',
+    lblMemo: 'メモ（任意）',
+    addBtn: '＋ 追加',
+    listTitle: 'TASK LIST',
+    settingsTitle: '設定',
+    lblDayLarge: '大タスクの作業日数',
+    lblDayMedium: '中タスクの作業日数',
+    lblDaySmall: '小タスクの作業日数',
+    lblNotifPerm: 'ブラウザ通知',
+    notifPermBtn: '通知を許可する',
+    saveSettings: '保存',
+    large: '大', medium: '中', small: '小',
+    optLarge: d => `大（${d}日）`,
+    optMedium: d => `中（${d}日）`,
+    optSmall: d => `小（${d}日）`,
+    days: ['月', '火', '水', '木', '金', '土', '日'],
+    deleteTaskBtn: '🗑 削除',
+    deadlineLabel: '締め切り',
+    startLabel: '作業開始',
+    workDaysLabel: '作業日数',
+    memoLabel: 'メモ',
+    weightLabel: '重さ',
+    emptyList: 'タスクがありません',
+    notifStart: n => `【${n}】 予定が近づいてきました。そろそろ準備を始めましょう。`,
+    notifWarn:  n => `【${n}】 順調に進んでいますか？まだなら相当マズいですよ。`,
+    notifUrgent: n => `【${n}】 今日がゴールです。あと一息！まさか、まだ始めていないなんてことありませんよね？`,
+    notifGranted: '✓ 許可済み',
+    notifDenied: '✗ ブロック中',
+    notifDefault: '未設定',
+    titleRequired: 'タイトルを入力してください',
+    deadlineRequired: '締め切り日を選択してください',
+    langBtn: 'EN',
+    urlInfoTitle: 'あなた専用のページ',
+    urlInfoDesc: 'タスクを追加するとURLが自動更新されます。このURLをブックマークすれば、スマホ・PCどこからでも同じタスクを確認できます。',
+    copyUrlBtn: 'URLをコピー',
+    copiedFeedback: 'コピーしました ✓',
+    detailBtnLabel: '詳細',
+    dpTodayBtn: '今日',
+    dpManualBtn: '⌨ 手動入力',
+    dpConfirmBtn: '確定',
+    deadlinePlaceholder: '日付を選択',
+    todayBtn: '今日',
+  },
+  en: {
+    formTitle: 'Add Task',
+    lblTitle: 'Title',
+    lblDeadline: 'Deadline',
+    lblWeight: 'Weight',
+    lblMemo: 'Memo (optional)',
+    addBtn: '＋ Add',
+    listTitle: 'TASK LIST',
+    settingsTitle: 'Settings',
+    lblDayLarge: 'Large task work days',
+    lblDayMedium: 'Medium task work days',
+    lblDaySmall: 'Small task work days',
+    lblNotifPerm: 'Browser Notifications',
+    notifPermBtn: 'Allow notifications',
+    saveSettings: 'Save',
+    large: 'Large', medium: 'Medium', small: 'Small',
+    optLarge: d => `Large (${d}d)`,
+    optMedium: d => `Medium (${d}d)`,
+    optSmall: d => `Small (${d}d)`,
+    days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    deleteTaskBtn: '🗑 Delete',
+    deadlineLabel: 'Deadline',
+    startLabel: 'Start',
+    workDaysLabel: 'Work days',
+    memoLabel: 'Memo',
+    weightLabel: 'Weight',
+    emptyList: 'No tasks yet',
+    notifStart: n => `[${n}] Work period approaching. Time to start preparing!`,
+    notifWarn:  n => `[${n}] Making progress? If not, you're in serious trouble!`,
+    notifUrgent: n => `[${n}] Today is the deadline! One last push! You haven't started yet, have you...?`,
+    notifGranted: '✓ Allowed',
+    notifDenied: '✗ Blocked',
+    notifDefault: 'Not set',
+    titleRequired: 'Please enter a title',
+    deadlineRequired: 'Please select a deadline',
+    langBtn: 'JP',
+    urlInfoTitle: 'Your personal page',
+    urlInfoDesc: 'The URL updates automatically when you add tasks. Bookmark it to access your tasks from any device.',
+    copyUrlBtn: 'Copy URL',
+    copiedFeedback: 'Copied ✓',
+    detailBtnLabel: 'Details',
+    dpTodayBtn: 'Today',
+    dpManualBtn: '⌨ Manual',
+    dpConfirmBtn: 'OK',
+    deadlinePlaceholder: 'Select date',
+    todayBtn: 'Today',
+  }
+};
+
+function t(key, ...args) {
+  const v = T[lang][key];
+  return typeof v === 'function' ? v(...args) : (v ?? key);
+}
+
+// ── Date utilities ─────────────────────────────────────────────
+function localDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function parseLocalDate(str) {
+  const [y, m, d] = str.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function todayDate() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function fmtShort(dateStr) {
+  const d = parseLocalDate(dateStr);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}
+
+function fmtDateDisplay(dateStr) {
+  if (!dateStr) return '';
+  const d = parseLocalDate(dateStr);
+  if (lang === 'ja') {
+    return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
+  } else {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+}
+
+// ── Task logic ─────────────────────────────────────────────────
+function workDays(weight) {
+  const v = settings[weight];
+  return (v === 0 || v === '0') ? 0 : Math.max(1, parseInt(v) || 1);
+}
+
+function taskStartDate(task) {
+  return addDays(parseLocalDate(task.deadline), -workDays(task.weight));
+}
+
+function inWorkPeriod(task, dateStr) {
+  const s = localDateStr(taskStartDate(task));
+  return dateStr >= s && dateStr <= task.deadline;
+}
+
+// ── Callback-based date picker ─────────────────────────────────
+function openDatePicker(callback, prefillDateStr) {
+  _dpCallback = callback;
+  if (prefillDateStr) {
+    const d = parseLocalDate(prefillDateStr);
+    dpMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+  } else {
+    dpMonth = new Date(todayDate().getFullYear(), todayDate().getMonth(), 1);
+  }
+  document.getElementById('dpManualInputWrapper').classList.remove('active');
+  renderDatePicker();
+  document.getElementById('datePickerOverlay').classList.add('active');
+}
+
+function closeDatePicker() {
+  document.getElementById('datePickerOverlay').classList.remove('active');
+}
+
+function renderDatePicker() {
+  const grid = document.getElementById('dpGrid');
+  grid.innerHTML = '';
+
+  const year = dpMonth.getFullYear();
+  const month = dpMonth.getMonth();
+  const todayStr = localDateStr(todayDate());
+
+  if (lang === 'ja') {
+    document.getElementById('dpMonthLabel').textContent = `${year}年${month + 1}月`;
+  } else {
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('dpMonthLabel').textContent = `${months[month]} ${year}`;
+  }
+
+  const dayHeaders = t('days');
+  dayHeaders.forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'dp-day-header';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const firstDay = new Date(year, month, 1);
+  let startOffset = firstDay.getDay() - 1;
+  if (startOffset < 0) startOffset = 6;
+
+  for (let i = 0; i < startOffset; i++) {
+    const empty = document.createElement('button');
+    empty.className = 'dp-day empty';
+    grid.appendChild(empty);
+  }
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const btn = document.createElement('button');
+    btn.className = 'dp-day';
+    if (ds === todayStr) btn.classList.add('today');
+    btn.textContent = d;
+    btn.addEventListener('click', () => {
+      if (_dpCallback) { _dpCallback(ds); _dpCallback = null; }
+      closeDatePicker();
+    });
+    grid.appendChild(btn);
+  }
+}
+
+document.getElementById('dpPrev').addEventListener('click', () => {
+  dpMonth.setMonth(dpMonth.getMonth() - 1);
+  renderDatePicker();
+});
+
+document.getElementById('dpNext').addEventListener('click', () => {
+  dpMonth.setMonth(dpMonth.getMonth() + 1);
+  renderDatePicker();
+});
+
+document.getElementById('dpTodayBtn').addEventListener('click', () => {
+  const td = localDateStr(todayDate());
+  if (_dpCallback) { _dpCallback(td); _dpCallback = null; }
+  closeDatePicker();
+});
+
+document.getElementById('dpManualBtn').addEventListener('click', () => {
+  const wrapper = document.getElementById('dpManualInputWrapper');
+  wrapper.classList.toggle('active');
+  if (wrapper.classList.contains('active')) {
+    document.getElementById('dpManualNative').value = '';
+    document.getElementById('dpManualNative').focus();
+  }
+});
+
+document.getElementById('dpManualConfirm').addEventListener('click', () => {
+  const val = document.getElementById('dpManualNative').value;
+  if (val) {
+    if (_dpCallback) { _dpCallback(val); _dpCallback = null; }
+    closeDatePicker();
+  }
+});
+
+document.getElementById('dpManualNative').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('dpManualConfirm').click();
+  }
+});
+
+document.getElementById('datePickerOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('datePickerOverlay')) {
+    _dpCallback = null;
+    closeDatePicker();
+  }
+});
+
+// ── Task input modal ───────────────────────────────────────────
+function openTaskInputModal(prefillDateStr) {
+  _editingTaskId = null;
+  document.getElementById('tiModalTitle').textContent = t('formTitle');
+  document.getElementById('tiAddBtn').textContent = t('addBtn');
+  document.getElementById('tiInputTitle').value = '';
+  document.getElementById('tiInputMemo').value = '';
+  document.getElementById('tiInputWeight').value = 'medium';
+  tiSetDeadline(prefillDateStr || '');
+  document.getElementById('taskInputOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('tiInputTitle').focus(), 100);
+}
+
+function openEditModal(id) {
+  const task = tasks.find(tk => tk.id === id);
+  if (!task) return;
+  _editingTaskId = id;
+  document.getElementById('taskDetailOverlay').classList.remove('active');
+  document.getElementById('tiModalTitle').textContent = lang === 'ja' ? 'タスクを編集' : 'Edit Task';
+  document.getElementById('tiAddBtn').textContent = lang === 'ja' ? '保存' : 'Save';
+  document.getElementById('tiInputTitle').value = task.title;
+  document.getElementById('tiInputMemo').value = task.memo || '';
+  document.getElementById('tiInputWeight').value = task.weight;
+  tiSetDeadline(task.deadline);
+  document.getElementById('taskInputOverlay').classList.add('active');
+  setTimeout(() => document.getElementById('tiInputTitle').focus(), 100);
+}
+
+function tiSetDeadline(dateStr) {
+  if (dateStr) clearFormError();
+  document.getElementById('tiInputDeadline').value = dateStr;
+  const btnText = document.getElementById('tiDeadlineBtnText');
+  const btn = document.getElementById('tiDeadlineBtn');
+  if (dateStr) {
+    btnText.textContent = fmtDateDisplay(dateStr);
+    btn.classList.add('has-value');
+  } else {
+    btnText.textContent = t('deadlinePlaceholder');
+    btn.classList.remove('has-value');
+  }
+}
+
+function showFormError(msg) {
+  const el = document.getElementById('tiFormError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+function clearFormError() {
+  const el = document.getElementById('tiFormError');
+  if (el) el.style.display = 'none';
+}
+
+function closeTIModal() {
+  _editingTaskId = null;
+  clearFormError();
+  document.getElementById('taskInputOverlay').classList.remove('active');
+}
+document.getElementById('closeTIModal').addEventListener('click', closeTIModal);
+document.getElementById('taskInputOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('taskInputOverlay')) closeTIModal();
+});
+
+document.getElementById('tiDeadlineBtn').addEventListener('click', () => {
+  const current = document.getElementById('tiInputDeadline').value;
+  openDatePicker(ds => { tiSetDeadline(ds); soundDatePick(); }, current || null);
+});
+
+document.getElementById('tiAddBtn').addEventListener('click', () => {
+  const title    = document.getElementById('tiInputTitle').value.trim();
+  const deadline = document.getElementById('tiInputDeadline').value;
+  const weight   = document.getElementById('tiInputWeight').value;
+  const memo     = document.getElementById('tiInputMemo').value.trim();
+  if (!title)    { showFormError(t('titleRequired'));    return; }
+  if (!deadline) { showFormError(t('deadlineRequired')); return; }
+  // Tutorial: enforce required weight BEFORE adding the task
+  if (typeof _tutStep !== 'undefined' && _tutStep >= 0 && !_editingTaskId) {
+    const _ts = _TUT[_tutStep];
+    if (_ts && _ts.requireWeight && weight !== _ts.requireWeight) {
+      const _wl = { large: '大', medium: '中', small: '小' };
+      showFormError(`重さ「${_wl[_ts.requireWeight] || _ts.requireWeight}」を選んでください`);
+      return;
+    }
+  }
+  if (_editingTaskId) {
+    const idx = tasks.findIndex(tk => tk.id === _editingTaskId);
+    if (idx >= 0) tasks[idx] = { ...tasks[idx], title, deadline, weight, memo };
+    _editingTaskId = null;
+  } else {
+    tasks.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+      title, deadline, weight, memo,
+      completedDays: [],
+      created: new Date().toISOString()
+    });
+    if (typeof checkNotificationsForNewTask === 'function') checkNotificationsForNewTask(tasks[tasks.length-1]);
+  }
+  saveTasks();
+  soundAdd();
+  if (typeof tutOnTaskAdded === 'function') tutOnTaskAdded(tasks[tasks.length - 1]);
+  document.getElementById('taskInputOverlay').classList.remove('active');
+  renderAll();
+});
+
+document.getElementById('tiInputTitle').addEventListener('input', () => clearFormError());
+document.getElementById('tiInputTitle').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault();
+    if (document.getElementById('tiInputDeadline').value) {
+      document.getElementById('tiAddBtn').click();
+    } else {
+      document.getElementById('tiDeadlineBtn').click();
+    }
+  }
+});
+
+// Enter on weight select → submit (if deadline already set)
+document.getElementById('tiInputWeight').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.isComposing) {
+    e.preventDefault();
+    if (document.getElementById('tiInputDeadline').value) {
+      document.getElementById('tiAddBtn').click();
+    } else {
+      document.getElementById('tiDeadlineBtn').click();
+    }
+  }
+});
+
+// ── applyLang ──────────────────────────────────────────────────
+function applyLang() {
+  document.documentElement.lang = lang;
+  const h1 = document.getElementById('appTitle');
+  if (lang === 'ja') {
+    h1.innerHTML = '<span class="title-ja">ざっくり</span><span class="title-en">TASK</span>';
+    document.title = 'ざっくりTASK';
+  } else {
+    h1.innerHTML = '<span class="title-en">ROUGH TASK</span>';
+    document.title = 'ROUGH TASK';
+  }
+  document.getElementById('listTitle').textContent = t('listTitle');
+  document.getElementById('settingsTitle').textContent = t('settingsTitle');
+  document.getElementById('lblDayLarge').textContent = t('lblDayLarge');
+  document.getElementById('lblDayMedium').textContent = t('lblDayMedium');
+  document.getElementById('lblDaySmall').textContent = t('lblDaySmall');
+  document.getElementById('lblNotifPerm').textContent = t('lblNotifPerm');
+  document.getElementById('notifPermBtn').textContent = t('notifPermBtn');
+  document.getElementById('saveSettings').textContent = t('saveSettings');
+  const _trashSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>`;
+  const _editSvg  = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+  document.getElementById('deleteTaskBtn').innerHTML = _trashSvg + ' ' + (lang === 'ja' ? '削除' : 'Delete');
+  document.getElementById('editTaskBtn').innerHTML   = _editSvg  + ' ' + (lang === 'ja' ? '編集' : 'Edit');
+  document.getElementById('dpTodayBtn').textContent = t('dpTodayBtn');
+  document.getElementById('dpManualBtn').textContent = t('dpManualBtn');
+  document.getElementById('dpManualConfirm').textContent = t('dpConfirmBtn');
+  document.getElementById('todayBtn').textContent = t('todayBtn');
+
+  // Task input modal
+  document.getElementById('tiModalTitle').textContent = t('formTitle');
+  document.getElementById('tiLblTitle').innerHTML = t('lblTitle') + ' <span style="color:var(--danger)">*</span>';
+  document.getElementById('tiLblDeadline').innerHTML = t('lblDeadline') + ' <span style="color:var(--danger)">*</span>';
+  document.getElementById('tiLblWeight').textContent = t('lblWeight');
+  document.getElementById('tiLblMemo').textContent = t('lblMemo');
+  document.getElementById('tiAddBtn').textContent = t('addBtn');
+  document.getElementById('tiOptLarge').textContent = t('optLarge', settings.large);
+  document.getElementById('tiOptMedium').textContent = t('optMedium', settings.medium);
+  document.getElementById('tiOptSmall').textContent = t('optSmall', settings.small);
+  // Update deadline placeholder in modal
+  tiSetDeadline(document.getElementById('tiInputDeadline').value || '');
+
+  updateNotifStatus();
+
+  // Language buttons active state
+  const enBtn = document.getElementById('langEnBtn');
+  const jaBtn = document.getElementById('langJaBtn');
+  if (enBtn && jaBtn) {
+    const activeStyle = 'background:var(--primary);color:#fff;border-color:var(--primary)';
+    enBtn.style.cssText = lang === 'en' ? activeStyle : '';
+    jaBtn.style.cssText = lang === 'ja' ? activeStyle : '';
+  }
+}
+
+// ── Calendar rendering ─────────────────────────────────────────
+function renderCalendar() {
+  renderMonthCalendar();
+}
+
+function renderMonthCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+  const todayStr = localDateStr(todayDate());
+  const year = currentMonthDate.getFullYear();
+  const month = currentMonthDate.getMonth();
+
+  // Label
+  if (lang === 'ja') {
+    document.getElementById('calPeriodLabel').textContent = `${year}年${month + 1}月`;
+  } else {
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('calPeriodLabel').textContent = `${months[month]} ${year}`;
+  }
+
+  const days = t('days');
+  days.forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'cal-header';
+    h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  // First day of month offset (Mon=0)
+  const firstDay = new Date(year, month, 1);
+  let startOffset = firstDay.getDay() - 1;
+  if (startOffset < 0) startOffset = 6;
+
+  // Previous month filler
+  for (let i = 0; i < startOffset; i++) {
+    const prevDate = new Date(year, month, -startOffset + i + 1);
+    const cell = document.createElement('div');
+    cell.className = 'month-cell other-month';
+    const num = document.createElement('span');
+    num.className = 'cal-date';
+    num.textContent = prevDate.getDate();
+    cell.appendChild(num);
+    grid.appendChild(cell);
+  }
+
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cell = document.createElement('div');
+    cell.className = 'month-cell' + (ds === todayStr ? ' today' : '');
+    cell.dataset.ds = ds;
+
+    const num = document.createElement('span');
+    num.className = 'cal-date';
+    num.textContent = d;
+    cell.appendChild(num);
+
+    // Work period bars (absolute positioned, Google Calendar style)
+    const workPeriodTasks = tasks.filter(task => {
+      const startS = localDateStr(taskStartDate(task));
+      return ds >= startS && ds <= task.deadline;
+    });
+    workPeriodTasks.forEach((task, idx) => {
+      const startS = localDateStr(taskStartDate(task));
+      const isStart = ds === startS;
+      const isEnd   = ds === task.deadline;
+      let posClass = '';
+      if (isStart && isEnd) posClass = 'bar-single';
+      else if (isStart) posClass = 'bar-start';
+      else if (isEnd)   posClass = 'bar-end';
+      const completedArr = task.completedDays || [];
+      const doneClass = completedArr.includes(ds) ? ' done' : '';
+      const bar = document.createElement('div');
+      bar.className = `cal-work-bar ${task.weight}${posClass ? ' ' + posClass : ''}${doneClass}`;
+      bar.style.bottom = `${idx * 19}px`;
+      bar.title = task.title;
+      if (isEnd || posClass === 'bar-single') {
+        bar.textContent = (completedArr.includes(ds) ? '✓ ' : '') + task.title;
+      }
+      bar.addEventListener('click', e => { e.stopPropagation(); openTaskDetail(task.id, ds); });
+      cell.appendChild(bar);
+    });
+
+
+    // Clicking a day cell opens task input modal with date pre-filled
+    cell.addEventListener('click', () => {
+      soundTap();
+      openTaskInputModal(ds);
+    });
+
+    grid.appendChild(cell);
+  }
+
+  // Fill remaining cells
+  const totalCells = startOffset + daysInMonth;
+  const remainder = totalCells % 7;
+  if (remainder !== 0) {
+    const extra = 7 - remainder;
+    for (let i = 1; i <= extra; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'month-cell other-month';
+      const num = document.createElement('span');
+      num.className = 'cal-date';
+      num.textContent = i;
+      cell.appendChild(num);
+      grid.appendChild(cell);
+    }
+  }
+}
+
+// ── Task list ──────────────────────────────────────────────────
+function toggleTaskDone(id, skipAnimation, contextDateStr) {
+  const task = tasks.find(tk => tk.id === id);
+  if (!task) return;
+  if (!task.completedDays) task.completedDays = [];
+  const vds = contextDateStr || localDateStr(viewDate);
+  const isMarkingDone = !task.completedDays.includes(vds);
+  if (isMarkingDone) {
+    // Add all days from task start up to and including vds
+    const start = taskStartDate(task);
+    let d = new Date(start.getTime());
+    while (true) {
+      const ds = localDateStr(d);
+      if (!task.completedDays.includes(ds)) task.completedDays.push(ds);
+      if (ds >= vds) break;
+      d.setDate(d.getDate() + 1);
+    }
+  } else {
+    // Remove vds and all days after it
+    task.completedDays = task.completedDays.filter(d => d > vds);
+  }
+  saveTasks();
+  renderAll();
+}
+
+function toggleTaskDoneFromDetail(id, contextDateStr) {
+  const task = tasks.find(tk => tk.id === id);
+  if (task) {
+    const vds = contextDateStr || localDateStr(viewDate);
+    const isMarkingDone = !(task.completedDays || []).includes(vds);
+    if (isMarkingDone) {
+      soundCheckDone();
+    } else {
+      soundUncheck();
+    }
+  }
+  toggleTaskDone(id, true, contextDateStr);
+  openTaskDetail(id, contextDateStr);
+}
+
+function updateViewDateLabel() {
+  const el = document.getElementById('taskListDateLabel');
+  if (!el) return;
+  const vds = localDateStr(viewDate);
+  const tds = localDateStr(todayDate());
+  if (vds === tds) {
+    el.textContent = lang === 'ja' ? '今日' : 'Today';
+  } else {
+    const m = viewDate.getMonth() + 1, d = viewDate.getDate();
+    el.textContent = lang === 'ja' ? `${m}/${d}` : `${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][viewDate.getMonth()]} ${d}`;
+  }
+}
+
+function renderTaskList() {
+  const list = document.getElementById('taskList');
+  const vds = localDateStr(viewDate);
+  updateViewDateLabel();
+  const active = tasks.filter(task => {
+    const startS = localDateStr(taskStartDate(task));
+    return vds >= startS && vds <= task.deadline;
+  }).sort((a, b) => a.deadline.localeCompare(b.deadline));
+  const unchecked = active.filter(t => !(t.completedDays || []).includes(vds));
+  const checked   = active.filter(t =>  (t.completedDays || []).includes(vds));
+  const sorted = [...unchecked, ...checked];
+  if (sorted.length === 0) {
+    list.innerHTML = `<div class="empty">${t('emptyList')}</div>`;
+    return;
+  }
+  list.innerHTML = sorted.map(task => {
+    const startS = localDateStr(taskStartDate(task));
+    const isDone = (task.completedDays || []).includes(vds);
+    const memoHtml = task.memo ? `<div class="task-memo">${esc(task.memo)}</div>` : '';
+    return `
+    <div class="task-item${isDone ? ' task-done' : ''}" data-id="${esc(task.id)}">
+      <div class="task-check-wrap">
+        <button class="task-check${isDone ? ' checked' : ''}" onclick="event.stopPropagation();handleTaskCheck('${esc(task.id)}')"></button>
+      </div>
+      <div class="task-weight-badge ${esc(task.weight)}"></div>
+      <div class="task-info">
+        <div class="task-title">${esc(task.title)}</div>
+        <div class="task-meta">
+          <span class="chip ${esc(task.weight)}">${esc(t(task.weight))}</span>
+          &nbsp;${esc(fmtShort(startS))} → ${esc(fmtShort(task.deadline))}
+        </div>
+        ${memoHtml}
+      </div>
+      <button class="task-edit-btn" draggable="false" onclick="event.stopPropagation();openTaskDetail('${esc(task.id)}')" title="編集">⋮</button>
+    </div>`;
+  }).join('');
+}
+
+// Task list: card click does nothing; use ⋮ button to open detail
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/`/g,'&#96;');
+}
+
+function openTaskDetail(id, contextDateStr) {
+  const task = tasks.find(tk => tk.id === id);
+  if (!task) return;
+  selectedTaskId = id;
+  const startS = localDateStr(taskStartDate(task));
+  const cds = contextDateStr || localDateStr(viewDate);
+  const isDone = (task.completedDays || []).includes(cds);
+  const tds = localDateStr(todayDate());
+  const dateLabel = cds === tds ? (lang === 'ja' ? '今日' : 'Today') : cds;
+  document.getElementById('detailTitle').textContent = task.title;
+  document.getElementById('detailBody').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0 14px;border-bottom:1px solid var(--border);margin-bottom:12px">
+      <button class="task-check${isDone ? ' checked' : ''}" onclick="toggleTaskDoneFromDetail('${esc(task.id)}','${esc(cds)}')" style="flex-shrink:0"></button>
+      <span style="font-size:0.88rem;color:var(--text-muted);font-family:'Inter',sans-serif">${esc(dateLabel)} — ${esc(cds)}</span>
+    </div>
+    <table class="detail-table">
+      <tr><td>${t('weightLabel')}</td><td><span class="chip ${esc(task.weight)}">${esc(t(task.weight))}</span></td></tr>
+      <tr><td>${t('startLabel')}</td><td>${esc(startS)}</td></tr>
+      <tr><td>${t('deadlineLabel')}</td><td>${esc(task.deadline)}</td></tr>
+      <tr><td>${t('workDaysLabel')}</td><td>${workDays(task.weight)}</td></tr>
+      ${task.memo ? `<tr><td>${t('memoLabel')}</td><td style="white-space:pre-wrap">${esc(task.memo)}</td></tr>` : ''}
+    </table>`;
+  document.getElementById('taskDetailOverlay').classList.add('active');
+}
+
+// ── Notifications ──────────────────────────────────────────────
+function checkNotifications() {
+  const todayStr = localDateStr(todayDate());
+  tasks.forEach(task => {
+    if ((task.completedDays || []).length >= workDays(task.weight)) return;
+    const startS    = localDateStr(taskStartDate(task));
+    const deadlineS = task.deadline;
+    const d2Date    = addDays(parseLocalDate(deadlineS), -2);
+    const d2S       = localDateStr(d2Date);
+    const showD2    = d2S > startS;
+    if (todayStr === startS)              maybeShowToast(task, 'start');
+    if (showD2 && todayStr === d2S)       maybeShowToast(task, 'warn');
+    if (todayStr === deadlineS)           maybeShowToast(task, 'urgent');
+  });
+}
+
+function maybeShowToast(task, type) {
+  const todayStr = localDateStr(todayDate());
+  const key = `toast_${task.id}_${type}_${todayStr}`;
+  if (localStorage.getItem(key)) return;
+  localStorage.setItem(key, '1');
+  showToast(task, type);
+}
+
+function showToast(task, type) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const msg = type === 'start'  ? t('notifStart',  task.title)
+            : type === 'warn'   ? t('notifWarn',   task.title)
+            :                     t('notifUrgent', task.title);
+  const toast = document.createElement('div');
+  toast.className = `notif-toast ${type}`;
+  toast.innerHTML = `<span class="toast-msg">${esc(msg)}</span><button class="toast-close" onclick="this.closest('.notif-toast').remove()">✕</button>`;
+  container.appendChild(toast);
+  setTimeout(() => { if (toast.parentNode) toast.remove(); }, 8000);
+  // Play notification sound (with AudioContext resume attempt)
+  try {
+    if (_audioCtx) _audioCtx.resume().then(() => soundNotif()).catch(() => {});
+    else { const tmp = _ctx(); tmp.resume().then(() => soundNotif()).catch(() => {}); }
+  } catch(e) {}
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification(lang === 'ja' ? 'ざっくりTASK' : 'ROUGH TASK', { body: msg }); } catch(e) {}
+  }
+}
+
+function clearToasts() {
+  const c = document.getElementById('toastContainer');
+  if (c) c.innerHTML = '';
+}
+
+function checkNotificationsForNewTask(task) {
+  const todayStr = localDateStr(todayDate());
+  const startS    = localDateStr(taskStartDate(task));
+  const deadlineS = task.deadline;
+  if (todayStr >= startS && todayStr < deadlineS) maybeShowToast(task, 'start');
+  if (todayStr === deadlineS) maybeShowToast(task, 'urgent');
+}
+
+function updateNotifStatus() {
+  const el = document.getElementById('notifStatus');
+  if (!('Notification' in window)) { el.textContent = '非対応'; return; }
+  const p = Notification.permission;
+  el.textContent = p === 'granted' ? t('notifGranted')
+                 : p === 'denied'  ? t('notifDenied')
+                 : t('notifDefault');
+}
+
+// ── Persistence ────────────────────────────────────────────────
+function saveTasks() {
+  localStorage.setItem('tasks', JSON.stringify(tasks));
+  updateURLHash();
+  if (_fbEnabled) saveToFirebase();
+}
+
+function saveSettingsToStorage() {
+  localStorage.setItem('taskSettings', JSON.stringify(settings));
+}
+
+// ── URL info card (removed) ────────────────────────────────────
+function renderURLInfoCard() {}
+
+function copyCurrentURL() {
+  const url = location.href;
+  const doSuccess = () => {
+    const btn = document.getElementById('inlineUrlCopyBtn');
+    if (!btn) return;
+    btn.textContent = t('copiedFeedback');
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = t('copyUrlBtn'); btn.classList.remove('copied'); }, 2000);
+  };
+  navigator.clipboard.writeText(url).then(doSuccess).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    doSuccess();
+  });
+}
+
+// ── Calendar navigation ────────────────────────────────────────
+document.getElementById('todayBtn').addEventListener('click', () => {
+  currentMonthDate = new Date();
+  renderCalendar();
+  soundTap();
+});
+
+document.getElementById('prevPeriod').addEventListener('click', () => {
+  currentMonthDate.setMonth(currentMonthDate.getMonth() - 1);
+  soundPera();
+  renderCalendar();
+  clearToasts();
+});
+
+document.getElementById('nextPeriod').addEventListener('click', () => {
+  currentMonthDate.setMonth(currentMonthDate.getMonth() + 1);
+  soundPera();
+  renderCalendar();
+  clearToasts();
+});
+
+// Swipe gesture for calendar (mobile)
+let _swipeStartX = 0, _swipeStartY = 0;
+document.getElementById('calendarGrid').addEventListener('touchstart', e => {
+  _swipeStartX = e.touches[0].clientX;
+  _swipeStartY = e.touches[0].clientY;
+}, { passive: true });
+document.getElementById('calendarGrid').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - _swipeStartX;
+  const dy = e.changedTouches[0].clientY - _swipeStartY;
+  if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 45) {
+    soundPera();
+    if (dx < 0) { currentMonthDate.setMonth(currentMonthDate.getMonth() + 1); renderCalendar(); clearToasts(); }
+    else { currentMonthDate.setMonth(currentMonthDate.getMonth() - 1); renderCalendar(); clearToasts(); }
+  }
+}, { passive: true });
+
+document.getElementById('fabAddBtn').addEventListener('click', () => {
+  openTaskInputModal(localDateStr(todayDate()));
+});
+
+document.getElementById('prevDateBtn').addEventListener('click', () => {
+  viewDate = addDays(viewDate, -1);
+  renderTaskList();
+  soundPera();
+});
+document.getElementById('nextDateBtn').addEventListener('click', () => {
+  viewDate = addDays(viewDate, 1);
+  renderTaskList();
+  soundPera();
+});
+
+function soundKachi() {}
+// シュッ: fresh airy swoosh for page turn
+function soundPera() {
+  _sweep(0.16, 3000, 180, 0.12);
+  _click(0.04, 400, 0.030, 0.08);
+}
+// キラン: sparkle ascending arpeggio on task check
+function soundCheckDone() {
+  _ring(1400, 0,    0.12, 0.09);
+  _ring(1800, 0.03, 0.10, 0.09);
+  _ring(2400, 0.06, 0.08, 0.08);
+  _click(0.06, 5000, 0.012, 0.02);
+}
+// チラン: descending arpeggio on task uncheck
+function soundUncheck() {
+  _ring(2400, 0,    0.10, 0.07);
+  _ring(1800, 0.03, 0.08, 0.07);
+  _ring(1200, 0.06, 0.12, 0.07);
+  _click(0.04, 4000, 0.012, 0.02);
+}
+function burstStars(btnEl) {
+  const r = btnEl.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const stars = [
+    { sym: '★', color: '#FF6B9D' },
+    { sym: '✦', color: '#4DD9C0' },
+    { sym: '★', color: '#FFD600' },
+  ];
+  stars.forEach((s, i) => {
+    const el = document.createElement('span');
+    el.className = 'star-particle';
+    el.textContent = s.sym;
+    const angle = (i / 3) * Math.PI * 2 - Math.PI / 2;
+    const dist = 28 + Math.random() * 14;
+    el.style.cssText = `left:${cx}px;top:${cy}px;color:${s.color};--tx:${Math.cos(angle)*dist}px;--ty:${Math.sin(angle)*dist}px`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 700);
+  });
+}
+function handleTaskCheck(id) {
+  // During tutorial, only allow checkbox interaction when step 9 waits for it
+  if (typeof _tutStep !== 'undefined' && _tutStep >= 0 && _tutWaitFor !== 'taskChecked') return;
+  const task = tasks.find(tk => tk.id === id);
+  if (!task) return;
+  const vds = localDateStr(viewDate);
+  const isMarkingDone = !(task.completedDays || []).includes(vds);
+  if (isMarkingDone) {
+    const btnEl = document.querySelector(`.task-item[data-id="${id}"] .task-check`);
+    if (btnEl) burstStars(btnEl);
+    soundCheckDone();
+    if (typeof tutOnTaskChecked === 'function') tutOnTaskChecked();
+  } else {
+    soundUncheck();
+  }
+  toggleTaskDone(id, true);
+}
+let _lastHoveredCell = null;
+document.getElementById('calendarGrid').addEventListener('mouseover', e => {
+  const cell = e.target.closest('.month-cell');
+  if (!cell || cell === _lastHoveredCell) return;
+  _lastHoveredCell = cell;
+  soundKachi();
+});
+document.getElementById('calendarGrid').addEventListener('mouseleave', () => { _lastHoveredCell = null; });
+
+let _lastHoveredTask = null;
+document.getElementById('taskList').addEventListener('mouseover', e => {
+  const card = e.target.closest('.task-item');
+  if (!card || card === _lastHoveredTask) return;
+  _lastHoveredTask = card;
+  soundKachi();
+});
+document.getElementById('taskList').addEventListener('mouseleave', () => { _lastHoveredTask = null; });
+
+// ── Sound effects (glass-on-marble) ──────────────────────────
+let _audioCtx = null;
+function _ctx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (_audioCtx.state === 'suspended') _audioCtx.resume();
+  return _audioCtx;
+}
+document.addEventListener('touchstart', () => { if (_audioCtx) _audioCtx.resume(); }, { passive: true });
+
+function _click(vol, freq, decay, delay = 0) {
+  try {
+    const ctx = _ctx();
+    const len = Math.ceil(ctx.sampleRate * 0.004);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = freq;
+    const lp = ctx.createBiquadFilter(); lp.type = 'lowpass';  lp.frequency.value = 9000;
+    const g = ctx.createGain();
+    const t0 = ctx.currentTime + delay;
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + decay);
+    src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(ctx.destination);
+    src.start(t0); src.stop(t0 + decay + 0.01);
+  } catch(e){}
+}
+function _ring(freq, delay, dur, vol) {
+  try {
+    const ctx = _ctx();
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.connect(g); g.connect(ctx.destination);
+    osc.type = 'sine'; osc.frequency.value = freq;
+    const t0 = ctx.currentTime + delay;
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(vol, t0 + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    osc.start(t0); osc.stop(t0 + dur + 0.01);
+  } catch(e){}
+}
+function _sweep(vol, freqStart, freqEnd, dur) {
+  try {
+    const ctx = _ctx();
+    const len = Math.ceil(ctx.sampleRate * dur);
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len) * 0.6;
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 1.2;
+    bp.frequency.setValueAtTime(freqStart, ctx.currentTime);
+    bp.frequency.exponentialRampToValueAtTime(freqEnd, ctx.currentTime + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+    src.connect(bp); bp.connect(g); g.connect(ctx.destination);
+    src.start(); src.stop(ctx.currentTime + dur + 0.01);
+  } catch(e){}
+}
+// タッ: subtle single tap
+function soundTap() {
+  _click(0.10, 700, 0.030, 0);
+}
+// カレンダースワイプ: ページをめくる音
+function soundSwipe() {
+  _sweep(0.11, 3500, 800, 0.14);
+  _click(0.05, 2000, 0.04, 0.10);
+}
+// タッ: subtle single tap
+function soundAdd() {
+  _click(0.10, 700, 0.030, 0);
+}
+// シュッ: quick high-to-low whoosh
+function soundDelete() {
+  _sweep(0.22, 3800, 150, 0.15);
+  _sweep(0.10, 2000, 120, 0.10);
+}
+// 日付選択: チッ (crisp pick)
+function soundDatePick() {
+  _click(0.08, 4000, 0.028, 0);
+  _ring(3000, 0.003, 0.18, 0.05);
+}
+
+// ── Header buttons ─────────────────────────────────────────────
+// ── Share dropdown ─────────────────────────────────────────────
+document.getElementById('copyUrlBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  const dd = document.getElementById('shareDropdown');
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+});
+document.addEventListener('click', e => {
+  if (!e.target.closest('#shareWrapper')) {
+    const dd = document.getElementById('shareDropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
+function _copyText(text, btn) {
+  const done = () => { const t = btn.textContent; btn.textContent = '✓ コピーしました'; setTimeout(() => { btn.textContent = t; }, 2000); };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(done).catch(() => { _copyFallback(text); done(); });
+  } else { _copyFallback(text); done(); }
+}
+function _copyFallback(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+}
+document.getElementById('sharePrivateBtn').addEventListener('click', () => {
+  document.getElementById('shareDropdown').style.display = 'none';
+  _copyText(location.href, document.getElementById('sharePrivateBtn'));
+});
+document.getElementById('shareFriendBtn').addEventListener('click', () => {
+  document.getElementById('shareDropdown').style.display = 'none';
+  const base = location.origin + location.pathname;
+  _copyText(base, document.getElementById('shareFriendBtn'));
+});
+
+document.getElementById('langEnBtn').addEventListener('click', () => { lang = 'en'; localStorage.setItem('lang', lang); applyLang(); renderAll(); });
+document.getElementById('langJaBtn').addEventListener('click', () => { lang = 'ja'; localStorage.setItem('lang', lang); applyLang(); renderAll(); });
+
+// ── Settings modal ─────────────────────────────────────────────
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  document.getElementById('settingLarge').value  = settings.large;
+  document.getElementById('settingMedium').value = settings.medium;
+  document.getElementById('settingSmall').value  = settings.small;
+  updateNotifStatus();
+  document.getElementById('settingsOverlay').classList.add('active');
+});
+
+document.getElementById('closeSettings').addEventListener('click', () =>
+  document.getElementById('settingsOverlay').classList.remove('active'));
+
+document.getElementById('settingsOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settingsOverlay'))
+    document.getElementById('settingsOverlay').classList.remove('active');
+});
+
+document.getElementById('saveSettings').addEventListener('click', () => {
+  settings.large  = Math.max(1, parseInt(document.getElementById('settingLarge').value)  || 7);
+  settings.medium = Math.max(1, parseInt(document.getElementById('settingMedium').value) || 3);
+  { const sv = parseInt(document.getElementById('settingSmall').value); settings.small = isNaN(sv) ? 1 : Math.max(0, sv); }
+  saveSettingsToStorage();
+  document.getElementById('settingsOverlay').classList.remove('active');
+  applyLang();
+  renderAll();
+});
+
+document.getElementById('notifPermBtn').addEventListener('click', () => {
+  if (!('Notification' in window)) return;
+  Notification.requestPermission().then(() => {
+    updateNotifStatus();
+    checkNotifications();
+  });
+});
+
+// ── Task detail modal ──────────────────────────────────────────
+document.getElementById('closeDetail').addEventListener('click', () =>
+  document.getElementById('taskDetailOverlay').classList.remove('active'));
+
+document.getElementById('taskDetailOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('taskDetailOverlay'))
+    document.getElementById('taskDetailOverlay').classList.remove('active');
+});
+
+document.getElementById('editTaskBtn').addEventListener('click', () => {
+  if (!selectedTaskId) return;
+  openEditModal(selectedTaskId);
+});
+
+document.getElementById('deleteTaskBtn').addEventListener('click', () => {
+  if (!selectedTaskId) return;
+  tasks = tasks.filter(tk => tk.id !== selectedTaskId);
+  saveTasks();
+  soundDelete();
+  document.getElementById('taskDetailOverlay').classList.remove('active');
+  renderAll();
+});
+
+// ── Global tap sound (all buttons except those with own sounds) ─
+document.addEventListener('click', e => {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+  const id = btn.id;
+  if (id === 'tiAddBtn' || id === 'deleteTaskBtn') return;
+  if (btn.classList.contains('dp-day')) return;
+  if (btn.classList.contains('task-check')) return;
+  if (btn.classList.contains('task-edit-btn')) return;
+  soundTap();
+}, true);
+
+// ── soundNotif (ピコピコ browser notification sound) ──────────
+function soundNotif() {
+  _chirp(1200, 1800, 0.10, 0.09, 0);
+  _chirp(1800, 2400, 0.09, 0.08, 0.13);
+}
+
+// ── Tutorial ──────────────────────────────────────────────────
+let _tutStep = -1;
+let _tutWaitFor = null; // null | 'taskAdded' | 'taskChecked'
+let _tutDragged = false;
+
+const _TUT = [
+  // 0
+  { msg: 'ようこそ「ざっくりTASK」へ！\nシンプルで使いやすいタスク管理アプリです。', btn: '次へ' },
+  // 1
+  { msg: '「タスク」とは、勉強・仕事・家事など\nあなたがクリアすべきミッションのことです。', btn: '次へ' },
+  // 2
+  { msg: 'まず1つタスクを追加してみましょう。\n明るくなっている3日後の日付を\nカレンダーでタップしてください。', btn: null, target: '+3', wait: 'taskAdded', action: '👆  3日後の日付をタップ → タスクを追加' },
+  // 3
+  { msg: 'カレンダーに色のついたバーが表示されました！\nこれがタスクの「準備期間」です。', btn: '次へ' },
+  // 4
+  { msg: '次に、5日後の日付をタップして\n「大」タスクを1つ追加してみましょう。', btn: null, target: '+5', wait: 'taskAdded', action: '👆  5日後をタップ → 重さ「大」で追加', requireWeight: 'large' },
+  // 5
+  { msg: '赤いバーが表示されました。\n「大」タスクは準備期間が長めです。', btn: '次へ' },
+  // 6
+  { msg: 'カレンダーで複数タスクの\n準備期間を一目で把握できます。', btn: '次へ', target: 'calendarGrid' },
+  // 7
+  { msg: '「TASK LIST」では\n今日のタスクが一覧できます。', btn: '次へ', target: 'taskList' },
+  // 8
+  { msg: '丸いチェックボックスで\n今日の作業完了をマークします。', btn: '次へ', target: 'taskList', msgPos: 'bottom' },
+  // 9
+  { msg: 'タスクにチェックを入れてみましょう！', btn: null, target: 'taskCheck', wait: 'taskChecked', action: '👆  チェックボックスをタップ' },
+  // 10
+  { msg: 'チェックを入れると完了タスクとなり、\n薄く表示されます。', btn: '次へ' },
+  // 11
+  { msg: 'カレンダーを見ながら\nTASK LISTが空になるよう\n作業を進めましょう！', btn: '次へ' },
+  // 12
+  { msg: '設定ボタンからタスクの\n準備日数を調整できます。', btn: '次へ', target: 'settingsBtn' },
+  // 13
+  { msg: '「大」のデフォルトは7日前から、\n「中」は3日前、「小」は1日前です。', btn: '次へ' },
+  // 14
+  { msg: '自分のペースに合わせて\n自由にカスタマイズしてください。', btn: '次へ' },
+  // 15
+  { msg: 'タスクデータはURLに保存されます。\nブックマークしておけば\n次回もそのまま使えます！', btn: '次へ' },
+  // 16
+  { msg: 'URLをスマホやPCで共有すれば、\n複数のデバイスでも\nタスクを共有できます。', btn: '次へ' },
+  // 17
+  { msg: '↑の共有ボタンから友だちに\nこのアプリを紹介できます。', btn: '次へ', target: 'copyUrlBtn' },
+  // 18
+  { msg: 'チュートリアル完了！\nたのしいタスク管理を 🎉', btn: '完了' },
+];
+
+function tutInit() {
+  if (localStorage.getItem('tutorialDone')) return;
+  _tutStep = 0;
+  _tutDragged = false;
+  _tutInitDrag();
+  _tutRender();
+}
+
+function _tutInitDrag() {
+  const box = document.getElementById('tutMsgBox');
+  if (!box || box._tutDragInit) return;
+  box._tutDragInit = true;
+  let dragging = false, ox, oy, bx, by;
+  const start = (e) => {
+    if (e.target.closest('#tutNextBtn')) return;
+    dragging = true;
+    const t = e.touches ? e.touches[0] : e;
+    ox = t.clientX; oy = t.clientY;
+    const r = box.getBoundingClientRect();
+    bx = r.left; by = r.top;
+    box.style.cursor = 'grabbing';
+    e.preventDefault();
+  };
+  const move = (e) => {
+    if (!dragging) return;
+    const t = e.touches ? e.touches[0] : e;
+    const dx = t.clientX - ox, dy = t.clientY - oy;
+    box.style.left = `${bx + dx}px`;
+    box.style.top = `${by + dy}px`;
+    box.style.bottom = 'auto';
+    box.style.transform = 'none';
+    _tutDragged = true;
+    e.preventDefault();
+  };
+  const end = () => { dragging = false; box.style.cursor = 'grab'; };
+  box.addEventListener('mousedown', start);
+  box.addEventListener('touchstart', start, { passive: false });
+  document.addEventListener('mousemove', move);
+  document.addEventListener('touchmove', move, { passive: false });
+  document.addEventListener('mouseup', end);
+  document.addEventListener('touchend', end);
+  box.style.cursor = 'grab';
+}
+
+// 対象日が表示中の月にないとき（月末に近い日に開始した場合）は、
+// カレンダーをその日の月へ送ってからセルを取得する。
+// これをしないと対象セルが存在せず、チュートリアルが先に進めなくなる。
+let _tutMonthNavGuard = false;
+function _tutCellForOffset(days) {
+  const target = addDays(todayDate(), days);
+  const ds = localDateStr(target);
+  let el = document.querySelector(`.month-cell[data-ds="${ds}"]`);
+  if (!el && !_tutMonthNavGuard) {
+    _tutMonthNavGuard = true;
+    try {
+      currentMonthDate = new Date(target.getFullYear(), target.getMonth(), 1);
+      renderCalendar();
+      el = document.querySelector(`.month-cell[data-ds="${ds}"]`);
+    } finally {
+      _tutMonthNavGuard = false;
+    }
+  }
+  return el;
+}
+
+function _tutTargetEl(targetKey) {
+  if (!targetKey) return null;
+  if (targetKey === '+3') return _tutCellForOffset(3);
+  if (targetKey === '+5') return _tutCellForOffset(5);
+  if (targetKey === 'taskCheck') {
+    // Force checkbox visible (desktop hides it via width:0 by default)
+    document.querySelectorAll('.task-check-wrap').forEach(w => {
+      w.style.width = '32px';
+      w.style.overflow = 'visible';
+    });
+    // Spotlight the whole task card for a clear, large target
+    return document.querySelector('.task-item:not(.task-done)') || document.querySelector('.task-item');
+  }
+  return document.getElementById(targetKey) || document.querySelector(targetKey);
+}
+
+function _tutSpotlight(el) {
+  const bars = [1,2,3,4].map(n => document.getElementById('tutBar'+n));
+  const blocker = document.getElementById('tutBlocker');
+  if (!el) {
+    // No specific target: full-screen dim, block all interaction
+    bars.forEach(b => { b.style.cssText = 'display:none'; });
+    if (blocker) blocker.style.display = 'block';
+    return;
+  }
+  // Spotlight: hide full blocker, use 4 bars to expose target
+  if (blocker) blocker.style.display = 'none';
+  const r = el.getBoundingClientRect();
+  const pad = 8;
+  const bg = 'rgba(0,0,0,0.58)';
+  bars[0].style.cssText = `display:block;position:fixed;background:${bg};z-index:8999;pointer-events:all;top:0;left:0;right:0;height:${Math.max(0,r.top-pad)}px`;
+  bars[1].style.cssText = `display:block;position:fixed;background:${bg};z-index:8999;pointer-events:all;top:${r.bottom+pad}px;left:0;right:0;bottom:0`;
+  bars[2].style.cssText = `display:block;position:fixed;background:${bg};z-index:8999;pointer-events:all;top:${r.top-pad}px;left:0;width:${Math.max(0,r.left-pad)}px;height:${r.height+pad*2}px`;
+  bars[3].style.cssText = `display:block;position:fixed;background:${bg};z-index:8999;pointer-events:all;top:${r.top-pad}px;left:${r.right+pad}px;right:0;height:${r.height+pad*2}px`;
+}
+
+function _tutRender() {
+  if (_tutStep < 0 || _tutStep >= _TUT.length) { _tutEnd(); return; }
+  const s = _TUT[_tutStep];
+  // Step counter
+  const stepEl = document.getElementById('tutStep');
+  if (stepEl) stepEl.textContent = `STEP ${_tutStep + 1} / ${_TUT.length}`;
+  document.getElementById('tutMsg').textContent = s.msg;
+  // Action hint (reset style to default blue before applying)
+  const ah = document.getElementById('tutActionHint');
+  if (ah) {
+    ah.textContent = s.action || '';
+    ah.style.display = s.action ? 'block' : 'none';
+    ah.style.background = 'var(--primary-light)';
+    ah.style.color = 'var(--primary)';
+  }
+  const nb = document.getElementById('tutNextBtn');
+  nb.style.display = s.btn ? 'inline-block' : 'none';
+  if (s.btn) nb.textContent = s.btn;
+  _tutWaitFor = s.wait || null;
+  const targetEl = _tutTargetEl(s.target);
+  _tutSpotlight(targetEl);
+  const box = document.getElementById('tutMsgBox');
+  box.style.display = 'block';
+  // Auto-position (only if not dragged by user)
+  if (!_tutDragged) {
+    // 対象が画面上部にあるときは説明ボックスを下に逃がす（重なって押せなくなるのを防ぐ）
+    let pos = s.msgPos;
+    if (!pos && targetEl) {
+      pos = targetEl.getBoundingClientRect().top < 210 ? 'bottom' : 'top';
+    }
+    if (pos === 'bottom') {
+      box.style.top = 'auto'; box.style.bottom = '30px';
+      box.style.left = '50%'; box.style.transform = 'translateX(-50%)';
+    } else {
+      box.style.top = '72px'; box.style.bottom = 'auto';
+      box.style.left = '50%'; box.style.transform = 'translateX(-50%)';
+    }
+  }
+  // Ensure modals appear above tutorial overlay
+  const taskOverlay = document.getElementById('taskInputOverlay');
+  if (taskOverlay) taskOverlay.style.zIndex = '9100';
+  const detailOverlay = document.getElementById('taskDetailOverlay');
+  if (detailOverlay) detailOverlay.style.zIndex = '9100';
+  const settingsOverlay = document.getElementById('settingsOverlay');
+  if (settingsOverlay) settingsOverlay.style.zIndex = '9100';
+}
+
+function tutNext() {
+  _tutStep++;
+  _tutRender();
+}
+
+function _tutEnd() {
+  localStorage.setItem('tutorialDone', '1');
+  _tutStep = -1;
+  _tutWaitFor = null;
+  _tutDragged = false;
+  const blocker = document.getElementById('tutBlocker');
+  if (blocker) blocker.style.display = 'none';
+  [1,2,3,4].forEach(n => {
+    const el = document.getElementById('tutBar'+n);
+    if (el) el.style.cssText = 'display:none';
+  });
+  const box = document.getElementById('tutMsgBox');
+  if (box) { box.style.display = 'none'; box.style.cssText = 'display:none'; }
+  // Restore check-wrap styles forced during taskCheck step
+  document.querySelectorAll('.task-check-wrap').forEach(w => {
+    w.style.width = ''; w.style.overflow = '';
+  });
+  // Restore modal z-indices
+  ['taskInputOverlay','taskDetailOverlay','settingsOverlay'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.zIndex = '';
+  });
+}
+
+function tutOnTaskAdded(task) {
+  if (_tutWaitFor !== 'taskAdded') return;
+  const s = _TUT[_tutStep];
+  // Weight requirement check (e.g. step 4 needs 'large')
+  if (s && s.requireWeight && task && task.weight !== s.requireWeight) {
+    // Wrong weight: show red warning, keep spotlight (re-applied by renderAll → _tutReposSpotlight)
+    const ah = document.getElementById('tutActionHint');
+    if (ah) {
+      const weightLabel = { large: '大', medium: '中', small: '小' };
+      ah.textContent = `⚠️ 重さ「${weightLabel[s.requireWeight] || s.requireWeight}」を選んで追加してください`;
+      ah.style.display = 'block';
+      ah.style.background = '#FEE2E2';
+      ah.style.color = '#DC2626';
+    }
+    return; // do NOT advance
+  }
+  _tutWaitFor = null;
+  _tutStep++;
+  setTimeout(_tutRender, 500);
+}
+
+function tutOnTaskChecked() {
+  if (_tutWaitFor === 'taskChecked') {
+    _tutWaitFor = null;
+    _tutStep++;
+    setTimeout(_tutRender, 600);
+  }
+}
+
+// ── Init ───────────────────────────────────────────────────────
+function renderAll() {
+  renderCalendar();
+  renderTaskList();
+  renderURLInfoCard();
+  checkNotifications();
+  // Re-apply spotlight after DOM updates (calendar cells are recreated on render)
+  if (_tutStep >= 0) _tutReposSpotlight();
+}
+
+function _tutReposSpotlight() {
+  if (_tutStep < 0 || _tutStep >= _TUT.length) return;
+  const s = _TUT[_tutStep];
+  if (!s.target) return;
+  const el = _tutTargetEl(s.target);
+  if (el) _tutSpotlight(el);
+}
+
+loadInitialTasks().then(() => {
+  applyLang();
+  renderAll();
+  tutInit();
+});
+</script>
+</body>
+</html>
